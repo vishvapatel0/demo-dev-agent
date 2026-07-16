@@ -10,3 +10,11 @@ def test_greet_normal_name():
 def test_greet_rejects_non_string():
     with pytest.raises(TypeError):
         greet(42)
+
+
+def test_greet_empty_name():
+    assert greet("") == "Hello, stranger!"
+
+
+def test_greet_whitespace_name():
+    assert greet("   ") == "Hello, stranger!"
