@@ -6,6 +6,11 @@ from greeting import greet
 app = Flask(__name__)
 
 
+@app.route("/health")
+def health_route():
+    return jsonify({"status": "ok"}), 200
+
+
 @app.route("/greet")
 def greet_route():
     name = request.args.get("name", "")

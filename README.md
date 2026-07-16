@@ -18,5 +18,6 @@ pytest
 
 ## Endpoints
 
+- `GET /health` — returns `{"status": "ok"}`
 - `GET /greet?name=World` — returns a greeting
 - `GET /calc/divide?a=10&b=2` — divides two numbers
