@@ -6,6 +6,7 @@ import ProductCard from "./components/ProductCard.jsx";
 
 export default function App() {
   const [products, setProducts] = useState([]);
+  const [catalog, setCatalog] = useState([]);
   const [cart, setCart] = useState({ items: [], total: 0 });
   const [query, setQuery] = useState("");
   const [message, setMessage] = useState("");
@@ -13,13 +14,17 @@ export default function App() {
   const [cartOpen, setCartOpen] = useState(false);
   const [status, setStatus] = useState("loading"); // loading | ready | error
 
-  const refreshCart = () => getCart().then(setCart).catch(() => {});
+  const refreshCart = () => {
+    getCart().then(setCart).catch(() => {});
+    getProducts().then(setCatalog).catch(() => {});
+  };
 
   const loadProducts = () => {
     setStatus("loading");
     getProducts()
       .then((data) => {
         setProducts(data);
+        setCatalog(data);
         setMessage("");
         setStatus("ready");
       })
@@ -33,6 +38,11 @@ export default function App() {
     loadProducts();
     refreshCart();
   }, []);
+
+  const catalogById = useMemo(
+    () => new Map(catalog.map((p) => [p.id, p])),
+    [catalog]
+  );
 
   const onSearch = async (event) => {
     event.preventDefault();
@@ -174,7 +184,12 @@ export default function App() {
       {cartOpen && (
         <>
           <div className="drawer-backdrop" onClick={() => setCartOpen(false)} />
-          <CartPanel cart={cart} onChanged={refreshCart} onClose={() => setCartOpen(false)} />
+          <CartPanel
+            cart={cart}
+            catalogById={catalogById}
+            onChanged={refreshCart}
+            onClose={() => setCartOpen(false)}
+          />
         </>
       )}
     </div>
