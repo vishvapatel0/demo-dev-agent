@@ -2,7 +2,7 @@ import { useState } from "react";
 
 import { checkout, removeFromCart } from "../api.js";
 
-export default function CartPanel({ cart, onChanged }) {
+export default function CartPanel({ cart, onChanged, onClose }) {
   const [orderMessage, setOrderMessage] = useState("");
 
   const remove = async (productId) => {
@@ -22,7 +22,12 @@ export default function CartPanel({ cart, onChanged }) {
 
   return (
     <aside className="cart">
-      <h2>Your cart</h2>
+      <div className="cart-header">
+        <h2>Your cart</h2>
+        <button className="cart-close" onClick={onClose} aria-label="Close cart">
+          ×
+        </button>
+      </div>
       {cart.items.length === 0 && <p>Cart is empty.</p>}
       <ul>
         {cart.items.map((item) => (

@@ -2,6 +2,13 @@ import { useState } from "react";
 
 import { addToCart } from "../api.js";
 
+const CATEGORY_ICONS = {
+  electronics: "💻",
+  accessories: "🎒",
+  audio: "🎧",
+  storage: "💾",
+};
+
 export default function ProductCard({ product, onAdded }) {
   const [busy, setBusy] = useState(false);
 
@@ -17,6 +24,8 @@ export default function ProductCard({ product, onAdded }) {
 
   return (
     <article className="card">
+      <div className="card-media">{CATEGORY_ICONS[product.category] || "🛒"}</div>
+      {product.category && <span className="tag">{product.category}</span>}
       <h3>{product.name}</h3>
       <p className="desc">{product.description}</p>
       <p className="meta">
