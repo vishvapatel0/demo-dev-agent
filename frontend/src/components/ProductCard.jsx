@@ -1,15 +1,7 @@
 import { useState } from "react";
 
 import { addToCart, removeFromCart, updateCartItem } from "../api.js";
-
-const CATEGORY_ICONS = {
-  electronics: "💻",
-  accessories: "🎒",
-  audio: "🎧",
-  storage: "💾",
-};
-
-const LOW_STOCK_THRESHOLD = 5;
+import { CATEGORY_ICONS, LOW_STOCK_THRESHOLD } from "../constants.js";
 
 export default function ProductCard({ product, quantityInCart, onAdded }) {
   const [busy, setBusy] = useState(false);
