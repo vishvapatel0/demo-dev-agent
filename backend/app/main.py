@@ -38,10 +38,10 @@ def list_products():
 
 @app.get("/api/products/search")
 def search_products(q: str = ""):
-    # BUG: comparison is case-sensitive, so "laptop" won't match "Laptop Stand"
+    q = q.lower()
     return [
         p for p in PRODUCTS
-        if q in p["name"] or q in p["description"]
+        if q in p["name"].lower() or q in p["description"].lower()
     ]
 
 

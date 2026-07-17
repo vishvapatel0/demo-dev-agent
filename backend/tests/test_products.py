@@ -42,3 +42,18 @@ def test_search_matches_exact_name_fragment():
     assert resp.status_code == 200
     names = [p["name"] for p in resp.json()]
     assert "Laptop Stand" in names
+
+
+@pytest.mark.parametrize("query", ["laptop", "LAPTOP", "Laptop", "lApToP"])
+def test_search_is_case_insensitive_for_name(query):
+    resp = client.get("/api/products/search", params={"q": query})
+    assert resp.status_code == 200
+    names = [p["name"] for p in resp.json()]
+    assert "Laptop Stand" in names
+
+
+def test_search_is_case_insensitive_for_description():
+    resp = client.get("/api/products/search", params={"q": "BACKLIT"})
+    assert resp.status_code == 200
+    names = [p["name"] for p in resp.json()]
+    assert "Mechanical Keyboard" in names
