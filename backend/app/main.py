@@ -76,8 +76,16 @@ def add_to_cart(item: CartItemIn):
     product = _find_product(item.product_id)
     if product is None:
         raise HTTPException(status_code=404, detail="product not found")
-    # BUG: no stock validation — any quantity can be added and ordered
-    CART[item.product_id] = CART.get(item.product_id, 0) + item.quantity
+    requested_quantity = CART.get(item.product_id, 0) + item.quantity
+    if requested_quantity > product["stock"]:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"only {product['stock']} unit(s) of '{product['name']}' "
+                f"in stock, cannot add {requested_quantity}"
+            ),
+        )
+    CART[item.product_id] = requested_quantity
     return {"product_id": item.product_id, "quantity": CART[item.product_id]}
 
 
@@ -93,7 +101,22 @@ def remove_from_cart(product_id: int):
 def checkout():
     if not CART:
         raise HTTPException(status_code=400, detail="cart is empty")
+    for product_id, quantity in CART.items():
+        product = _find_product(product_id)
+        if product is None:
+            raise HTTPException(status_code=404, detail="product not found")
+        if quantity > product["stock"]:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"only {product['stock']} unit(s) of '{product['name']}' "
+                    f"in stock, cannot order {quantity}"
+                ),
+            )
     cart_view = view_cart()
+    for product_id, quantity in CART.items():
+        product = _find_product(product_id)
+        product["stock"] -= quantity
     order = {
         "id": len(ORDERS) + 1,
         "items": cart_view["items"],

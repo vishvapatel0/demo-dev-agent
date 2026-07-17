@@ -77,3 +77,62 @@ def test_checkout_order_total_accounts_for_quantity():
     order = resp.json()
     assert order["total"] == 74.97
     assert order["items"][0]["quantity"] == 3
+
+
+def test_add_to_cart_beyond_stock_returns_400():
+    # product 5 (Noise Cancelling Headphones) has 15 in stock
+    resp = client.post("/api/cart/items", json={"product_id": 5, "quantity": 500})
+    assert resp.status_code == 400
+    assert "15" in resp.json()["detail"]
+    assert client.get("/api/cart").json()["items"] == []
+
+
+def test_add_to_cart_up_to_stock_is_allowed():
+    resp = client.post("/api/cart/items", json={"product_id": 5, "quantity": 15})
+    assert resp.status_code == 201
+    assert resp.json()["quantity"] == 15
+
+
+def test_add_to_cart_accumulates_and_rejects_when_exceeding_stock():
+    client.post("/api/cart/items", json={"product_id": 5, "quantity": 10})
+    resp = client.post("/api/cart/items", json={"product_id": 5, "quantity": 10})
+    assert resp.status_code == 400
+    # first addition should be preserved, second (rejected) one not added
+    assert client.get("/api/cart").json()["items"][0]["quantity"] == 10
+
+
+def test_checkout_decrements_stock():
+    client.post("/api/cart/items", json={"product_id": 5, "quantity": 5})
+    resp = client.post("/api/orders")
+    assert resp.status_code == 201
+    product = client.get("/api/products/5").json()
+    assert product["stock"] == 10
+
+
+def test_second_order_exceeding_remaining_stock_is_rejected():
+    # first order takes 10 of the 15 in stock, leaving 5
+    client.post("/api/cart/items", json={"product_id": 5, "quantity": 10})
+    resp1 = client.post("/api/orders")
+    assert resp1.status_code == 201
+
+    # adding more than the remaining 5 in stock to the cart is rejected
+    resp2 = client.post("/api/cart/items", json={"product_id": 5, "quantity": 6})
+    assert resp2.status_code == 400
+
+    # stock should be unaffected
+    product = client.get("/api/products/5").json()
+    assert product["stock"] == 5
+
+
+def test_checkout_rejects_when_stock_reduced_after_add_to_cart():
+    # simulate stock shrinking between adding to cart and checking out
+    from app.store import PRODUCTS
+
+    client.post("/api/cart/items", json={"product_id": 5, "quantity": 15})
+    for product in PRODUCTS:
+        if product["id"] == 5:
+            product["stock"] = 5
+
+    resp = client.post("/api/orders")
+    assert resp.status_code == 400
+    assert client.get("/api/cart").json()["items"] != []
