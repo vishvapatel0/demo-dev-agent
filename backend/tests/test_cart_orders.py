@@ -55,3 +55,25 @@ def test_checkout_creates_order_and_clears_cart():
 def test_checkout_empty_cart_returns_400():
     resp = client.post("/api/orders")
     assert resp.status_code == 400
+
+
+def test_multi_quantity_item_total():
+    client.post("/api/cart/items", json={"product_id": 1, "quantity": 3})
+    resp = client.get("/api/cart")
+    assert resp.json()["total"] == 74.97
+
+
+def test_multi_quantity_multi_item_total():
+    client.post("/api/cart/items", json={"product_id": 1, "quantity": 3})
+    client.post("/api/cart/items", json={"product_id": 7, "quantity": 2})
+    resp = client.get("/api/cart")
+    assert resp.json()["total"] == 114.95
+
+
+def test_checkout_order_total_accounts_for_quantity():
+    client.post("/api/cart/items", json={"product_id": 1, "quantity": 3})
+    resp = client.post("/api/orders")
+    assert resp.status_code == 201
+    order = resp.json()
+    assert order["total"] == 74.97
+    assert order["items"][0]["quantity"] == 3
