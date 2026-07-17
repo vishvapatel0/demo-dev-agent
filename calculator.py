@@ -11,5 +11,6 @@ def multiply(a, b):
 
 
 def divide(a, b):
-    # BUG: raises ZeroDivisionError when b == 0 instead of returning a clear error
+    if b == 0:
+        raise ValueError("cannot divide by zero")
     return a / b

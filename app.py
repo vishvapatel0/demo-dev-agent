@@ -16,7 +16,11 @@ def greet_route():
 def divide_route():
     a = float(request.args.get("a", "0"))
     b = float(request.args.get("b", "0"))
-    return jsonify({"result": divide(a, b)})
+    try:
+        result = divide(a, b)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    return jsonify({"result": result})
 
 
 if __name__ == "__main__":
