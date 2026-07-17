@@ -1,0 +1,111 @@
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field
+
+from .store import CART, ORDERS, PRODUCTS
+
+app = FastAPI(title="ShopLite API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+class CartItemIn(BaseModel):
+    product_id: int
+    quantity: int = Field(default=1, ge=1)
+
+
+def _find_product(product_id: int):
+    for product in PRODUCTS:
+        if product["id"] == product_id:
+            return product
+    return None
+
+
+@app.get("/api/health")
+def health():
+    return {"status": "ok"}
+
+
+@app.get("/api/products")
+def list_products():
+    return PRODUCTS
+
+
+@app.get("/api/products/search")
+def search_products(q: str = ""):
+    # BUG: comparison is case-sensitive, so "laptop" won't match "Laptop Stand"
+    return [
+        p for p in PRODUCTS
+        if q in p["name"] or q in p["description"]
+    ]
+
+
+@app.get("/api/products/{product_id}")
+def get_product(product_id: int):
+    product = _find_product(product_id)
+    if product is None:
+        raise HTTPException(status_code=404, detail="product not found")
+    return product
+
+
+@app.get("/api/cart")
+def view_cart():
+    items = []
+    total = 0.0
+    for product_id, quantity in CART.items():
+        product = _find_product(product_id)
+        if product is None:
+            continue
+        items.append({
+            "product_id": product_id,
+            "name": product["name"],
+            "price": product["price"],
+            "quantity": quantity,
+        })
+        # BUG: total ignores the quantity of each item
+        total += product["price"]
+    return {"items": items, "total": round(total, 2)}
+
+
+@app.post("/api/cart/items", status_code=201)
+def add_to_cart(item: CartItemIn):
+    product = _find_product(item.product_id)
+    if product is None:
+        raise HTTPException(status_code=404, detail="product not found")
+    # BUG: no stock validation — any quantity can be added and ordered
+    CART[item.product_id] = CART.get(item.product_id, 0) + item.quantity
+    return {"product_id": item.product_id, "quantity": CART[item.product_id]}
+
+
+@app.delete("/api/cart/items/{product_id}")
+def remove_from_cart(product_id: int):
+    if product_id not in CART:
+        raise HTTPException(status_code=404, detail="item not in cart")
+    del CART[product_id]
+    return {"removed": product_id}
+
+
+@app.post("/api/orders", status_code=201)
+def checkout():
+    if not CART:
+        raise HTTPException(status_code=400, detail="cart is empty")
+    cart_view = view_cart()
+    order = {
+        "id": len(ORDERS) + 1,
+        "items": cart_view["items"],
+        "total": cart_view["total"],
+        "status": "confirmed",
+    }
+    ORDERS.append(order)
+    CART.clear()
+    return order
+
+
+@app.get("/api/orders")
+def list_orders():
+    return ORDERS
