@@ -124,6 +124,40 @@ def test_second_order_exceeding_remaining_stock_is_rejected():
     assert product["stock"] == 5
 
 
+def test_update_cart_item_sets_quantity():
+    client.post("/api/cart/items", json={"product_id": 1, "quantity": 2})
+    resp = client.put("/api/cart/items/1", json={"quantity": 5})
+    assert resp.status_code == 200
+    assert resp.json() == {"product_id": 1, "quantity": 5}
+    assert client.get("/api/cart").json()["items"][0]["quantity"] == 5
+
+
+def test_update_cart_item_can_decrease_quantity():
+    client.post("/api/cart/items", json={"product_id": 1, "quantity": 5})
+    resp = client.put("/api/cart/items/1", json={"quantity": 1})
+    assert resp.status_code == 200
+    assert client.get("/api/cart").json()["items"][0]["quantity"] == 1
+
+
+def test_update_cart_item_not_in_cart_returns_404():
+    resp = client.put("/api/cart/items/1", json={"quantity": 1})
+    assert resp.status_code == 404
+
+
+def test_update_cart_item_rejects_zero_quantity():
+    client.post("/api/cart/items", json={"product_id": 1, "quantity": 2})
+    resp = client.put("/api/cart/items/1", json={"quantity": 0})
+    assert resp.status_code == 422
+    assert client.get("/api/cart").json()["items"][0]["quantity"] == 2
+
+
+def test_update_cart_item_beyond_stock_returns_400():
+    client.post("/api/cart/items", json={"product_id": 5, "quantity": 2})
+    resp = client.put("/api/cart/items/5", json={"quantity": 500})
+    assert resp.status_code == 400
+    assert client.get("/api/cart").json()["items"][0]["quantity"] == 2
+
+
 def test_checkout_rejects_when_stock_reduced_after_add_to_cart():
     # simulate stock shrinking between adding to cart and checking out
     from app.store import PRODUCTS

@@ -19,6 +19,10 @@ class CartItemIn(BaseModel):
     quantity: int = Field(default=1, ge=1)
 
 
+class CartItemUpdate(BaseModel):
+    quantity: int = Field(..., ge=1)
+
+
 def _find_product(product_id: int):
     for product in PRODUCTS:
         if product["id"] == product_id:
@@ -87,6 +91,25 @@ def add_to_cart(item: CartItemIn):
         )
     CART[item.product_id] = requested_quantity
     return {"product_id": item.product_id, "quantity": CART[item.product_id]}
+
+
+@app.put("/api/cart/items/{product_id}")
+def update_cart_item(product_id: int, item: CartItemUpdate):
+    if product_id not in CART:
+        raise HTTPException(status_code=404, detail="item not in cart")
+    product = _find_product(product_id)
+    if product is None:
+        raise HTTPException(status_code=404, detail="product not found")
+    if item.quantity > product["stock"]:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"only {product['stock']} unit(s) of '{product['name']}' "
+                f"in stock, cannot set quantity to {item.quantity}"
+            ),
+        )
+    CART[product_id] = item.quantity
+    return {"product_id": product_id, "quantity": CART[product_id]}
 
 
 @app.delete("/api/cart/items/{product_id}")

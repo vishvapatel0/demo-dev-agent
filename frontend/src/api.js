@@ -19,6 +19,11 @@ export const addToCart = (productId, quantity = 1) =>
     method: "POST",
     body: JSON.stringify({ product_id: productId, quantity }),
   });
+export const updateCartItem = (productId, quantity) =>
+  request(`/api/cart/items/${productId}`, {
+    method: "PUT",
+    body: JSON.stringify({ quantity }),
+  });
 export const removeFromCart = (productId) =>
   request(`/api/cart/items/${productId}`, { method: "DELETE" });
 export const checkout = () => request("/api/orders", { method: "POST" });
