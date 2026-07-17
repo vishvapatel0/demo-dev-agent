@@ -67,8 +67,7 @@ def view_cart():
             "price": product["price"],
             "quantity": quantity,
         })
-        # BUG: total ignores the quantity of each item
-        total += product["price"]
+        total += product["price"] * quantity
     return {"items": items, "total": round(total, 2)}
 
 
