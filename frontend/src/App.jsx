@@ -61,6 +61,11 @@ export default function App() {
 
   const itemCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
 
+  const cartQuantities = useMemo(
+    () => new Map(cart.items.map((item) => [item.product_id, item.quantity])),
+    [cart.items]
+  );
+
   return (
     <div className="layout">
       <nav className="navbar">
@@ -146,7 +151,12 @@ export default function App() {
         {status === "ready" && visibleProducts.length > 0 && (
           <section className="grid">
             {visibleProducts.map((p) => (
-              <ProductCard key={p.id} product={p} onAdded={refreshCart} />
+              <ProductCard
+                key={p.id}
+                product={p}
+                quantityInCart={cartQuantities.get(p.id) || 0}
+                onAdded={refreshCart}
+              />
             ))}
           </section>
         )}

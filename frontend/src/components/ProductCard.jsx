@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { addToCart } from "../api.js";
+import { addToCart, removeFromCart, updateCartItem } from "../api.js";
 
 const CATEGORY_ICONS = {
   electronics: "💻",
@@ -11,18 +11,19 @@ const CATEGORY_ICONS = {
 
 const LOW_STOCK_THRESHOLD = 5;
 
-export default function ProductCard({ product, onAdded }) {
+export default function ProductCard({ product, quantityInCart, onAdded }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
   const outOfStock = product.stock <= 0;
   const lowStock = !outOfStock && product.stock <= LOW_STOCK_THRESHOLD;
+  const atStockLimit = quantityInCart >= product.stock;
 
-  const add = async () => {
+  const runAction = async (action) => {
     setBusy(true);
     setError("");
     try {
-      await addToCart(product.id, 1);
+      await action();
       onAdded();
     } catch (err) {
       setError(err.message);
@@ -30,6 +31,13 @@ export default function ProductCard({ product, onAdded }) {
       setBusy(false);
     }
   };
+
+  const add = () => runAction(() => addToCart(product.id, 1));
+  const increment = () => runAction(() => updateCartItem(product.id, quantityInCart + 1));
+  const decrement = () =>
+    runAction(() =>
+      quantityInCart <= 1 ? removeFromCart(product.id) : updateCartItem(product.id, quantityInCart - 1)
+    );
 
   return (
     <article className="card">
@@ -47,10 +55,36 @@ export default function ProductCard({ product, onAdded }) {
         <span className="price">${product.price.toFixed(2)}</span>
         <span className="stock">{outOfStock ? "Out of stock" : `${product.stock} in stock`}</span>
       </p>
-      <button className="btn-add" onClick={add} disabled={busy || outOfStock}>
-        {busy && <span className="spinner" aria-hidden="true" />}
-        {outOfStock ? "Sold out" : busy ? "Adding…" : "Add to cart"}
-      </button>
+      {quantityInCart > 0 ? (
+        <div className="qty-stepper" role="group" aria-label={`${product.name} quantity`}>
+          <button
+            type="button"
+            className="qty-btn"
+            onClick={decrement}
+            disabled={busy}
+            aria-label={`Decrease quantity of ${product.name}`}
+          >
+            −
+          </button>
+          <span className="qty-value" aria-live="polite">
+            {quantityInCart}
+          </span>
+          <button
+            type="button"
+            className="qty-btn"
+            onClick={increment}
+            disabled={busy || atStockLimit}
+            aria-label={`Increase quantity of ${product.name}`}
+          >
+            +
+          </button>
+        </div>
+      ) : (
+        <button className="btn-add" onClick={add} disabled={busy || outOfStock}>
+          {busy && <span className="spinner" aria-hidden="true" />}
+          {outOfStock ? "Sold out" : busy ? "Adding…" : "Add to cart"}
+        </button>
+      )}
       {error && <p className="message" role="alert">{error}</p>}
     </article>
   );

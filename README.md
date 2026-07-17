@@ -42,6 +42,7 @@ pytest
 | GET | /api/products/search?q= | Search products by name/description |
 | GET | /api/cart | View cart with total |
 | POST | /api/cart/items | Add item `{"product_id": 1, "quantity": 2}` |
+| PUT | /api/cart/items/{product_id} | Set item quantity `{"quantity": 3}` |
 | DELETE | /api/cart/items/{product_id} | Remove item from cart |
 | POST | /api/orders | Checkout: create order from cart |
 | GET | /api/orders | List past orders |
