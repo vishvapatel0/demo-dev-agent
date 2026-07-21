@@ -81,3 +81,87 @@ def test_storage_devices_are_listed_with_storage_category(name, category):
     matches = [p for p in resp.json() if p["name"] == name]
     assert len(matches) == 1
     assert matches[0]["category"] == category
+
+
+def test_filter_by_min_price():
+    resp = client.get("/api/products", params={"min_price": 100})
+    assert resp.status_code == 200
+    prices = [p["price"] for p in resp.json()]
+    assert prices and all(price >= 100 for price in prices)
+
+
+def test_filter_by_max_price():
+    resp = client.get("/api/products", params={"max_price": 20})
+    assert resp.status_code == 200
+    prices = [p["price"] for p in resp.json()]
+    assert prices and all(price <= 20 for price in prices)
+
+
+def test_filter_by_min_and_max_price_range():
+    resp = client.get("/api/products", params={"min_price": 20, "max_price": 60})
+    assert resp.status_code == 200
+    prices = [p["price"] for p in resp.json()]
+    assert prices and all(20 <= price <= 60 for price in prices)
+
+
+def test_filter_with_no_matches_returns_empty_list():
+    resp = client.get("/api/products", params={"min_price": 100000})
+    assert resp.status_code == 200
+    assert resp.json() == []
+
+
+def test_filter_min_price_greater_than_max_price_is_rejected():
+    resp = client.get("/api/products", params={"min_price": 50, "max_price": 10})
+    assert resp.status_code == 400
+    assert "min_price" in resp.json()["detail"]
+
+
+def test_filter_rejects_negative_prices():
+    resp = client.get("/api/products", params={"min_price": -5})
+    assert resp.status_code == 422
+
+
+def test_sort_price_low_to_high():
+    resp = client.get("/api/products", params={"sort": "price_asc"})
+    assert resp.status_code == 200
+    prices = [p["price"] for p in resp.json()]
+    assert prices == sorted(prices)
+
+
+def test_sort_price_high_to_low():
+    resp = client.get("/api/products", params={"sort": "price_desc"})
+    assert resp.status_code == 200
+    prices = [p["price"] for p in resp.json()]
+    assert prices == sorted(prices, reverse=True)
+
+
+def test_sort_with_identical_prices_keeps_all_products():
+    resp = client.get("/api/products", params={"sort": "price_asc"})
+    assert resp.status_code == 200
+    assert len(resp.json()) == 13
+
+
+def test_invalid_sort_option_is_rejected():
+    resp = client.get("/api/products", params={"sort": "bogus"})
+    assert resp.status_code == 400
+
+
+def test_sort_and_filter_combined():
+    resp = client.get(
+        "/api/products", params={"min_price": 10, "max_price": 100, "sort": "price_desc"}
+    )
+    assert resp.status_code == 200
+    prices = [p["price"] for p in resp.json()]
+    assert prices == sorted(prices, reverse=True)
+    assert all(10 <= price <= 100 for price in prices)
+
+
+def test_search_supports_filter_and_sort():
+    resp = client.get(
+        "/api/products/search",
+        params={"q": "usb", "min_price": 10, "sort": "price_asc"},
+    )
+    assert resp.status_code == 200
+    prices = [p["price"] for p in resp.json()]
+    assert prices and prices == sorted(prices)
+    assert all(price >= 10 for price in prices)

@@ -37,9 +37,9 @@ pytest
 
 | Method | Path | Description |
 |---|---|---|
-| GET | /api/products | List all products |
+| GET | /api/products | List all products. Supports `min_price`, `max_price`, `sort` (`price_asc`\|`price_desc`) |
 | GET | /api/products/{id} | Get one product |
-| GET | /api/products/search?q= | Search products by name/description |
+| GET | /api/products/search?q= | Search products by name/description. Supports `min_price`, `max_price`, `sort` (`price_asc`\|`price_desc`) |
 | GET | /api/cart | View cart with total |
 | POST | /api/cart/items | Add item `{"product_id": 1, "quantity": 2}` |
 | PUT | /api/cart/items/{product_id} | Set item quantity `{"quantity": 3}` |

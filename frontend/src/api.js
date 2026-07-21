@@ -10,9 +10,28 @@ async function request(path, options = {}) {
   return resp.json();
 }
 
-export const getProducts = () => request("/api/products");
-export const searchProducts = (q) =>
-  request(`/api/products/search?q=${encodeURIComponent(q)}`);
+function buildProductQuery({ minPrice, maxPrice, sort } = {}) {
+  const params = new URLSearchParams();
+  if (minPrice !== undefined && minPrice !== null && minPrice !== "") {
+    params.set("min_price", minPrice);
+  }
+  if (maxPrice !== undefined && maxPrice !== null && maxPrice !== "") {
+    params.set("max_price", maxPrice);
+  }
+  if (sort) {
+    params.set("sort", sort);
+  }
+  const qs = params.toString();
+  return qs ? `?${qs}` : "";
+}
+
+export const getProducts = (options) =>
+  request(`/api/products${buildProductQuery(options)}`);
+export const searchProducts = (q, options) => {
+  const params = new URLSearchParams(buildProductQuery(options).slice(1));
+  params.set("q", q);
+  return request(`/api/products/search?${params.toString()}`);
+};
 export const getCart = () => request("/api/cart");
 export const addToCart = (productId, quantity = 1) =>
   request("/api/cart/items", {

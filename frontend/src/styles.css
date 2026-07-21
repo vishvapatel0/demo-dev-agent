@@ -207,6 +207,78 @@ a, button, input, [tabindex] {
   border-color: transparent;
 }
 
+/* Price filter & sort */
+.price-filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1.25rem 1.5rem 0;
+}
+.price-filter-inputs {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.price-filter-inputs input {
+  width: 6.5rem;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+}
+.price-filter-inputs input::placeholder { color: var(--text-subtle); }
+.price-filter-sep { color: var(--text-subtle); }
+
+.sort-control {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+.sort-control select {
+  padding: 0.55rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+}
+
+.price-filter-error { margin: 0.75rem 1.5rem 0; }
+
+.active-filters {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.9rem 1.5rem 0;
+  flex-wrap: wrap;
+}
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.4rem 0.6rem 0.4rem 0.85rem;
+  border-radius: 999px;
+}
+.filter-chip-remove {
+  background: none;
+  color: inherit;
+  padding: 0;
+  width: 1.1rem;
+  height: 1.1rem;
+  line-height: 1;
+  border-radius: 999px;
+  font-size: 0.85rem;
+}
+.filter-chip-remove:hover:not(:disabled) { background: var(--accent); color: #fff; }
+
 /* Section header */
 .section-header {
   display: flex;
@@ -556,6 +628,11 @@ button.link:hover:not(:disabled) { background: none; color: var(--danger); text-
   .search { max-width: none; width: 100%; order: 3; }
   .cart-fab { display: flex; }
   .nav-actions .cart-trigger { display: none; }
+
+  .price-filter { flex-direction: column; align-items: stretch; }
+  .price-filter-inputs input { width: 100%; flex: 1; }
+  .sort-control { justify-content: space-between; }
+  .sort-control select { flex: 1; }
 
   .cart-layout { grid-template-columns: 1fr; }
   .order-summary { position: static; }

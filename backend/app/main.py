@@ -1,8 +1,45 @@
-from fastapi import FastAPI, HTTPException
+from typing import Optional
+
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from .store import CART, ORDERS, PRODUCTS
+
+SORT_OPTIONS = {
+    "price_asc": lambda p: p["price"],
+    "price_desc": lambda p: -p["price"],
+}
+
+
+def _filter_and_sort_products(
+    products: list,
+    min_price: Optional[float],
+    max_price: Optional[float],
+    sort: Optional[str],
+):
+    if min_price is not None and max_price is not None and min_price > max_price:
+        raise HTTPException(
+            status_code=400,
+            detail="min_price cannot be greater than max_price",
+        )
+
+    results = products
+    if min_price is not None:
+        results = [p for p in results if p["price"] >= min_price]
+    if max_price is not None:
+        results = [p for p in results if p["price"] <= max_price]
+
+    if sort is not None:
+        if sort not in SORT_OPTIONS:
+            raise HTTPException(
+                status_code=400,
+                detail=f"invalid sort option: {sort}",
+            )
+        results = sorted(results, key=SORT_OPTIONS[sort])
+
+    return results
+
 
 app = FastAPI(title="ShopLite API")
 
@@ -36,17 +73,27 @@ def health():
 
 
 @app.get("/api/products")
-def list_products():
-    return PRODUCTS
+def list_products(
+    min_price: Optional[float] = Query(default=None, ge=0),
+    max_price: Optional[float] = Query(default=None, ge=0),
+    sort: Optional[str] = None,
+):
+    return _filter_and_sort_products(PRODUCTS, min_price, max_price, sort)
 
 
 @app.get("/api/products/search")
-def search_products(q: str = ""):
+def search_products(
+    q: str = "",
+    min_price: Optional[float] = Query(default=None, ge=0),
+    max_price: Optional[float] = Query(default=None, ge=0),
+    sort: Optional[str] = None,
+):
     q = q.lower()
-    return [
+    matches = [
         p for p in PRODUCTS
         if q in p["name"].lower() or q in p["description"].lower()
     ]
+    return _filter_and_sort_products(matches, min_price, max_price, sort)
 
 
 @app.get("/api/products/{product_id}")
